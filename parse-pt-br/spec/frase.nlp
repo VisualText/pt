@@ -1,0 +1,18 @@
+###############################################
+# ARQUIVO: frase
+# ASSUNTO: Agrupa a sequência de sintagmas de cada frase numa _FRASE
+#
+# Todos os sintagmas de uma frase (até o ponto/?/! final, inclusive) são
+# reunidos, de modo que a estrutura final fique frase -> sintagmas -> palavras.
+###############################################
+
+@NODES _ROOT
+
+@RULES
+_FRASE <-
+	_xWILD [plus match=(_ORACAO _coordcl _ORACAOSUB _ORACAOREL _SN _SP _SV _conjuncao
+						_adjetivo _adverbio _substantivo _verbo _pronome _pronrelativo
+						_subordinada _preposicao _auxiliar _interjeicao _determinante
+						\, \; \: \" \' \-)]					### (1) sintagmas + pontuação interna (inclui hífen de ênclise)
+	_xWILD [opt match=( \. \? \! )]							### (2) fim da frase
+	@@

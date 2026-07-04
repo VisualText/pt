@@ -1,0 +1,31 @@
+###############################################
+# ARQUIVO: coordenacao
+# ASSUNTO: Envolve orações coordenadas
+#
+# Usando as marcas _coordcl do passo coordTag, envolve a sequência de
+# sintagmas de cada lado de um coordenador de oração em uma _ORACAO:
+#       [oração] coordenador [oração]
+# Exemplo: "[ele correu] e [ela caminhou]".
+###############################################
+
+@NODES _ROOT
+
+# A oração que precede o coordenador.
+@POST
+	group(1,1,"_ORACAO");
+@RULES
+_xNIL <-
+	_xWILD [plus match=(_ORACAOSUB _ORACAOREL _SN _SP _SV _conjuncao _adjetivo _adverbio
+						_substantivo _verbo _pronome _preposicao _auxiliar _determinante \, \; \: \-)]	### (1)
+	_coordcl [lookahead]																### (2)
+	@@
+
+# A oração que segue o coordenador.
+@POST
+	group(2,2,"_ORACAO");
+@RULES
+_xNIL <-
+	_coordcl																			### (1)
+	_xWILD [plus match=(_ORACAOSUB _ORACAOREL _SN _SP _SV _conjuncao _adjetivo _adverbio
+						_substantivo _verbo _pronome _preposicao _auxiliar _determinante \, \; \: \-)]	### (2)
+	@@

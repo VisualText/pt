@@ -1,0 +1,36 @@
+###############################################
+# ARQUIVO: subordinada
+# ASSUNTO: Marca conjunções subordinativas que introduzem orações
+#
+#   subordinativas confiáveis (porque, embora, enquanto, ...)  -> sempre _subordinada
+#   condicionais (quando, como, se, que)  -> _subordinada só quando vem uma
+#       oração (sujeito + verbo) em seguida; senão ficam como estavam
+#       (preposição / conjunção / pronome relativo).
+###############################################
+
+@NODES _ROOT
+
+# Subordinativa dependente de contexto seguida de oração (sujeito + verbo).
+@CHECK
+	if (!EhPalavra(strtolower(N("$text",1)),G("subordcond")))
+		fail();
+@POST
+	pnrename(N(1),"_subordinada");
+@RULES
+_xNIL <-
+	_xWILD [one match=(_preposicao _conjuncao _pronome _pronrelativo _adverbio)]	### (1)
+	_xWILD [one match=(_pronome _determinante _substantivo)]					### (2) início do sujeito
+	_xWILD [star match=(_adjetivo _substantivo _adverbio _auxiliar _pronome _determinante)]	### (3) resto do sujeito
+	_verbo													### (4) o verbo
+	@@
+
+# Subordinativas confiáveis: marque onde aparecerem.
+@CHECK
+	if (!EhPalavra(strtolower(N("$text",1)),G("subordinativas")))
+		fail();
+@POST
+	pnrename(N(1),"_subordinada");
+@RULES
+_xNIL <-
+	_xANY	### (1)
+	@@

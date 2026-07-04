@@ -1,0 +1,20 @@
+###############################################
+# ARQUIVO: oracaoSubordinada
+# ASSUNTO: Agrupa orações subordinadas (adverbiais)
+#
+# Uma oração subordinada vai da conjunção subordinativa até o seu sintagma
+# verbal e os complementos desse verbo:
+#       subordinativa (sintagmas pré-verbais)* SV (sintagmas pós-verbais)*
+# Exemplos: "[Quando a chuva parou], as crianças brincaram",
+#           "ela dormiu cedo [porque estava cansada]".
+###############################################
+
+@NODES _ROOT
+
+@RULES
+_ORACAOSUB <-
+	_subordinada											### (1) conjunção subordinativa
+	_xWILD [star match=(_SN _SP _adjetivo _adverbio _substantivo _pronome _preposicao _determinante _auxiliar _pronrelativo _ORACAOREL)]	### (2) até o verbo
+	_SV													### (3) o verbo da oração
+	_xWILD [star match=(_SN _SP _adjetivo _adverbio _substantivo _preposicao _determinante)]	### (4) complementos
+	@@

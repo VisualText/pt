@@ -1,0 +1,30 @@
+###############################################
+# ARQUIVO: padroes
+# ASSUNTO: Resolve as ambiguidades restantes por preferência de classe
+#
+# O que o contexto não decidiu recebe a classe mais provável, na ordem usual
+# de frequência do português:
+#     substantivo > verbo > adjetivo > advérbio > preposição > pronome
+###############################################
+
+@NODES _ROOT
+
+@POST
+	if (N("s",1))
+		pnrename(N(1),"_substantivo");
+	else if (N("v",1))
+		pnrename(N(1),"_verbo");
+	else if (N("adj",1))
+		pnrename(N(1),"_adjetivo");
+	else if (N("adv",1))
+		pnrename(N(1),"_adverbio");
+	else if (N("prep",1))
+		pnrename(N(1),"_preposicao");
+	else if (N("pron",1))
+		pnrename(N(1),"_pronome");
+	else
+		pnrename(N(1),"_substantivo");
+@RULES
+_xNIL <-
+	_ambiguo	### (1)
+	@@

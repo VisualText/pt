@@ -1,0 +1,86 @@
+###############################################
+# ARQUIVO: lexico
+# ASSUNTO: Atribui a cada palavra a sua classe gramatical (nó)
+#
+# Cada token alfabético traz do "dicttokz" as marcas do dicionário:
+#   "s" "v" "adj" "adv" "prep" "pron" "art" "conj" "int"  e  "pos num".
+#
+# Fixamos aqui as classes fechadas (determinantes, auxiliares, preposições,
+# pronomes, conjunções) por lista ou por marca confiável, RENOMEANDO o token
+# no lugar para que as marcas do dicionário continuem disponíveis
+# (N("s"), N("v"), ...) no passo de desambiguação.  Resta só a ambiguidade
+# de classe aberta, que vira "_ambiguo".
+###############################################
+
+@NODES _ROOT
+
+@POST
+	L("t") = strtolower(N("$text",1));
+
+	# --- verbos auxiliares / de ligação ---
+	if (EhAuxiliar(L("t"))) {
+		pnpush(N(1),"_auxiliar");
+
+	# --- determinantes (artigos, demonstrativos, possessivos, ...) ---
+	} else if (EhDeterminante(L("t"))) {
+		pnpush(N(1),"_determinante");
+
+	# --- preposições com homógrafo verbal, fixadas por lista ("pela", "para",
+	#     "sobre" ...): no português são esmagadoramente preposições. ---
+	} else if (EhPalavra(L("t"),G("preposicoes"))) {
+		pnpush(N(1),"_preposicao");
+
+	# --- demais preposições verdadeiras (preposição que não é verbo) ---
+	#     "da", "no", "de", "em" ...  As contnrações já vêm marcadas "prep"
+	#     pelo dicionário.
+	} else if (N("prep",1) && !N("v",1)) {
+		pnpush(N(1),"_preposicao");
+
+	# --- pronomes confiáveis (pronome sem leitura aberta) ---
+	} else if (N("pron",1) && !N("s",1) && !N("v",1) && !N("adj",1)) {
+		pnpush(N(1),"_pronome");
+
+	# --- conjunções coordenativas fixadas por lista ("e", "mas", "ou", ...):
+	#     no dicionário arrastam leituras nominais/pronominais espúrias, por
+	#     isso fixamo-las aqui antes da classe aberta. ---
+	} else if (EhPalavra(L("t"),G("coordfixas"))) {
+		pnpush(N(1),"_conjuncao");
+
+	# --- conjunções confiáveis ---
+	} else if (N("conj",1) && !N("v",1) && !N("s",1) && !N("adj",1)) {
+		pnpush(N(1),"_conjuncao");
+
+	# --- interjeições ---
+	} else if (N("int",1) && N("pos num",1) == 1) {
+		pnpush(N(1),"_interjeicao");
+
+	#############################################
+	# CLASSE ABERTA
+	#############################################
+	} else if (N("pos num",1) > 1) {
+		pnpush(N(1),"_ambiguo");
+	} else if (N("s",1)) {
+		pnpush(N(1),"_substantivo");
+	} else if (N("v",1)) {
+		pnpush(N(1),"_verbo");
+	} else if (N("adj",1)) {
+		pnpush(N(1),"_adjetivo");
+	} else if (N("adv",1)) {
+		pnpush(N(1),"_adverbio");
+	} else if (N("prep",1)) {
+		pnpush(N(1),"_preposicao");
+	} else if (N("pron",1)) {
+		pnpush(N(1),"_pronome");
+	} else if (N("conj",1)) {
+		pnpush(N(1),"_conjuncao");
+
+	# --- palavra desconhecida (nome próprio, número por extenso, ...):
+	#     tratamos como substantivo para que entre nos sintagmas. ---
+	} else {
+		pnpush(N(1),"_substantivo");
+	}
+	N("texto",1) = N("$text",1);
+@RULES
+_xNIL <-
+	_xALPHA	### (1)
+	@@

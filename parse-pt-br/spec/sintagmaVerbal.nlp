@@ -1,0 +1,23 @@
+###############################################
+# ARQUIVO: sintagmaVerbal
+# ASSUNTO: Constrói sintagmas verbais (SV), de baixo para cima
+#
+# Um sintagma verbal reúne auxiliares/advérbios à frente, o verbo principal,
+# e verbos/advérbios à direita:
+#       (aux | adv)* verbo (verbo | adv)*
+# Quando há só auxiliar/cópula (p.ex. "é", "está"), ele mesmo é o verbo.
+###############################################
+
+@NODES _ROOT
+
+@RULES
+_SV <-
+	_xWILD [star match=(_auxiliar _adverbio)]	### (1) auxiliares / advérbios pré-verbais
+	_verbo									### (2) verbo principal
+	_xWILD [star match=(_verbo _adverbio)]		### (3) verbos / advérbios à direita
+	@@
+
+_SV <-
+	_xWILD [plus match=(_auxiliar)]	### (1) auxiliar / cópula sozinho
+	_xWILD [star match=(_adverbio)]	### (2) advérbios
+	@@

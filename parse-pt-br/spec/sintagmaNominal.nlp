@@ -1,0 +1,24 @@
+###############################################
+# ARQUIVO: sintagmaNominal
+# ASSUNTO: Constrói sintagmas nominais (SN), de baixo para cima
+#
+# Um sintagma nominal é um determinante opcional, adjetivos antepostos,
+# um ou mais substantivos (o último é o núcleo), e adjetivos pospostos
+# (ordem típica do português):
+#       (det) (adj)* (subst)+ (adj)*
+# Um pronome sozinho também é um sintagma nominal completo.
+###############################################
+
+@NODES _ROOT
+
+@RULES
+_SN <-
+	_xWILD [opt match=(_determinante)]		### (1) determinante opcional
+	_xWILD [star match=(_adjetivo)]			### (2) adjetivos antepostos
+	_xWILD [plus match=(_substantivo)]		### (3) núcleo (e modificadores nominais)
+	_xWILD [star match=(_adjetivo)]			### (4) adjetivos pospostos
+	@@
+
+_SN <-
+	_pronome	### (1) um pronome sozinho é um sintagma nominal
+	@@

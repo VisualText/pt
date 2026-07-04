@@ -1,0 +1,18 @@
+###############################################
+# ARQUIVO: iniciarKB
+# ASSUNTO: Cria o conceito raiz "frases" na base de conhecimento
+###############################################
+
+@CODE
+
+G("frases") = getconcept(findroot(),"frases");
+G("dictionary") = getconcept(findroot(),"dictionary");
+
+if (fileexists("kb/user/missing.dict")) {
+	loaddict("missing.dict");
+}
+if (fileexists("kb/user/missing.kbb")) {
+	loadkbb("missing.kbb");
+}
+
+@@CODE

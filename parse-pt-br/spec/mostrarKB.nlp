@@ -1,0 +1,10 @@
+###############################################
+# ARQUIVO: mostrarKB
+# ASSUNTO: Salva a base de conhecimento das frases (.kbb)
+###############################################
+
+@CODE
+
+SaveKB("frases.kbb",G("frases"),2);
+
+@@CODE

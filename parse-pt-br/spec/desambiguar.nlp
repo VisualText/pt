@@ -1,0 +1,166 @@
+###############################################
+# ARQUIVO: desambiguar
+# ASSUNTO: Desambiguação contextual das palavras de classe aberta (recursivo)
+#
+# Só resta ambiguidade entre as classes abertas (substantivo / verbo /
+# adjetivo / advérbio).  Cada regra aplica um princípio da gramática
+# portuguesa e renomeia exatamente um nó "_ambiguo".  O passo roda como
+# "rec" (recursivo), então as regras se alimentam até a frase estabilizar.
+#
+# Cada regra se protege em @CHECK: fail() faz o motor tentar a próxima regra
+# nesta posição em vez de decidir errado.
+###############################################
+
+@NODES _ROOT
+
+###############################################
+# 1. PREPOSIÇÃO: palavra ambígua capaz de ser preposição, seguida de
+#    determinante ou pronome, encabeça um sintagma preposicional.
+###############################################
+@CHECK
+	if (!(N("prep",1) && (EhTipo(N(2),"_determinante") || EhTipo(N(2),"_pronome"))))
+		fail();
+@POST
+	pnrename(N(1),"_preposicao");
+@RULES
+_xNIL <-
+	_ambiguo	### (1)
+	_xANY		### (2)
+	@@
+
+###############################################
+# 2. OBJETO DE PREPOSIÇÃO: preposição + ambíguo capaz de ser substantivo
+#    (e NÃO adjetivo) é o núcleo do sintagma nominal objeto.
+#    ("pelas ruas", "de orvalho")
+###############################################
+@CHECK
+	if (!(N("s",2) && !N("adj",2)))
+		fail();
+@POST
+	pnrename(N(2),"_substantivo");
+@RULES
+_xNIL <-
+	_preposicao	### (1)
+	_ambiguo	### (2)
+	@@
+
+###############################################
+# 3. VERBO APÓS AUXILIAR: auxiliar (+ advérbios) + ambíguo-verbo -> verbo
+#    ("tinha amassado", "está lançando", "foi destruída")
+###############################################
+@CHECK
+	if (!N("v",3))
+		fail();
+@POST
+	pnrename(N(3),"_verbo");
+@RULES
+_xNIL <-
+	_auxiliar					### (1)
+	_xWILD [star match=(_adverbio)]	### (2)
+	_ambiguo					### (3)
+	@@
+
+###############################################
+# 3. VERBO APÓS PRONOME SUJEITO: pronome + ambíguo-verbo -> verbo
+#    ("ele viu", "ela partiu")
+###############################################
+@CHECK
+	if (!N("v",2))
+		fail();
+@POST
+	pnrename(N(2),"_verbo");
+@RULES
+_xNIL <-
+	_pronome	### (1)
+	_ambiguo	### (2)
+	@@
+
+###############################################
+# 4. VERBO PÓS-NOMINAL: sujeito (substantivo/pronome) (+ advérbios) +
+#    ambíguo-verbo seguido de complemento (preposição/advérbio/determinante/
+#    pronome) é o verbo da oração.  ("o sol lança luz", "as crianças correm
+#    pelos becos")  Exigir o complemento evita transformar em verbo um
+#    substantivo final.
+###############################################
+@CHECK
+	if (!N("v",3))
+		fail();
+	if (!(EhTipo(N(4),"_preposicao") || EhTipo(N(4),"_adverbio")
+			|| EhTipo(N(4),"_determinante") || EhTipo(N(4),"_pronome")))
+		fail();
+@POST
+	pnrename(N(3),"_verbo");
+@RULES
+_xNIL <-
+	_xWILD [one match=(_substantivo _pronome)]	### (1) sujeito
+	_xWILD [star match=(_adverbio)]				### (2) advérbios
+	_ambiguo									### (3) o verbo
+	_xANY										### (4) complemento
+	@@
+
+###############################################
+# 5. ADJETIVO ANTEPOSTO: ambíguo capaz de ser adjetivo, logo antes de um
+#    nominal, é adjetivo ("bela manhã", "fria manhã", "velho amigo").
+###############################################
+@CHECK
+	if (!(N("adj",1) && EhNominal(N(2))))
+		fail();
+@POST
+	pnrename(N(1),"_adjetivo");
+@RULES
+_xNIL <-
+	_ambiguo	### (1)
+	_xANY		### (2)
+	@@
+
+###############################################
+# 6. NÚCLEO SUBSTANTIVO: determinante/adjetivo + ambíguo capaz de ser
+#    substantivo (e NÃO adjetivo) é o núcleo do sintagma.
+#    ("a cidade", "uma luz", "os telhados")
+###############################################
+@CHECK
+	if (!(N("s",2) && !N("adj",2)))
+		fail();
+	if (N("prep",2))		# palavra capaz de ser preposição não é núcleo nominal
+		fail();
+@POST
+	pnrename(N(2),"_substantivo");
+@RULES
+_xNIL <-
+	_xWILD [one match=(_determinante _adjetivo)]	### (1)
+	_ambiguo									### (2)
+	@@
+
+###############################################
+# 7. ADJETIVO PÓS-NOMINAL: substantivo + ambíguo capaz de ser adjetivo é um
+#    adjetivo posposto (ordem típica do português: "homem velho",
+#    "casa branca", "telhados cobertos").
+###############################################
+@CHECK
+	if (!N("adj",2))
+		fail();
+@POST
+	pnrename(N(2),"_adjetivo");
+@RULES
+_xNIL <-
+	_substantivo	### (1)
+	_ambiguo		### (2)
+	@@
+
+###############################################
+# 8. SUBSTANTIVO COMPOSTO: determinante + substantivo + ambíguo-substantivo
+#    -> o segundo também é substantivo ("o canto dos galos" sequência nominal).
+###############################################
+@CHECK
+	if (!N("s",3))
+		fail();
+	if (N("prep",3))		# preposição não encerra um composto nominal
+		fail();
+@POST
+	pnrename(N(3),"_substantivo");
+@RULES
+_xNIL <-
+	_determinante	### (1)
+	_substantivo	### (2)
+	_ambiguo		### (3)
+	@@

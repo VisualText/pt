@@ -1,0 +1,16 @@
+###############################################
+# ARQUIVO: sintagmaPreposicional
+# ASSUNTO: Constrói sintagmas preposicionais (SP), de baixo para cima
+#
+# Um sintagma preposicional é uma preposição seguida do seu objeto, um
+# sintagma nominal:   preposição + SN
+# Os sintagmas nominais já foram montados no passo anterior.
+###############################################
+
+@NODES _ROOT
+
+@RULES
+_SP <-
+	_preposicao	### (1) preposição
+	_SN			### (2) sintagma nominal objeto
+	@@

@@ -1,0 +1,19 @@
+###############################################
+# ARQUIVO: oracaoRelativa
+# ASSUNTO: Agrupa orações relativas
+#
+# Uma oração relativa vai do pronome relativo até o seu sintagma verbal e os
+# complementos desse verbo:
+#       relativo (sintagmas pré-verbais)* SV (sintagmas pós-verbais)*
+# Exemplo: "o homem [que mora ao lado] consertou o carro".
+###############################################
+
+@NODES _ROOT
+
+@RULES
+_ORACAOREL <-
+	_pronrelativo											### (1) pronome relativo
+	_xWILD [star match=(_SN _SP _adjetivo _adverbio _substantivo _preposicao _determinante _auxiliar)]	### (2) antes do verbo
+	_SV													### (3) o verbo da relativa
+	_xWILD [star match=(_SN _SP _adjetivo _adverbio _substantivo _preposicao _determinante)]	### (4) complementos
+	@@

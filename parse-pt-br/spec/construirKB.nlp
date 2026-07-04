@@ -1,0 +1,61 @@
+###############################################
+# ARQUIVO: construirKB
+# ASSUNTO: Constrói a árvore de conceitos da base a partir da árvore sintática
+#
+# Espelha a árvore final em conceitos da base sob G("frases"):
+#
+#   frases
+#     frase1 .. fraseN
+#       sintagma1 .. sintagmaM     tipo = SN | SV | SP | ORACAO ...
+#         palavra1 .. palavraK     texto = "...", classe = substantivo | verbo | ...
+#
+# MakeCountCon() (de KBFuncs) cria os conceitos numerados que o JSON mostra
+# como vetores.
+###############################################
+
+@DECL
+
+#---------------------------------------------------------------
+# Copia recursivamente os filhos de um nó da árvore para conceitos.
+#---------------------------------------------------------------
+ConstruirSintagma(L("pai"),L("no")) {
+	L("filho") = pndown(L("no"));
+	while (L("filho")) {
+		L("nome") = pnname(L("filho"));
+		if (EhClasse(L("filho"))) {
+			# classe gramatical + palavra: registra texto e classe
+			L("con") = MakeCountCon(L("pai"),"palavra");
+			addstrval(L("con"),"texto",pnname(pndown(L("filho"))));
+			addstrval(L("con"),"classe",strpiece(L("nome"),1,strlength(L("nome")) - 1));
+			# significado escolhido (m01, m02, ...) apontado pelo passo "significado"
+			L("sig") = pnvar(L("filho"),"meaning");
+			if (L("sig"))
+				addstrval(L("con"),"significado",conceptname(L("sig")));
+		} else if (strstartswith(L("nome"),"_")) {
+			# nó de sintagma / oração (SN / SV / SP ...): registra o tipo e recorre
+			L("con") = MakeCountCon(L("pai"),"sintagma");
+			addstrval(L("con"),"tipo",strpiece(L("nome"),1,strlength(L("nome")) - 1));
+			ConstruirSintagma(L("con"),L("filho"));
+		}
+		# (pontuação e folhas soltas são ignoradas)
+		L("filho") = pnnext(L("filho"));
+	}
+}
+
+@@DECL
+
+@CODE
+
+#---------------------------------------------------------------
+# Uma frase-conceito por nó _FRASE.
+#---------------------------------------------------------------
+L("frase") = pndown(pnroot());
+while (L("frase")) {
+	if (pnname(L("frase")) == "_FRASE") {
+		L("fcon") = MakeCountCon(G("frases"),"frase");
+		ConstruirSintagma(L("fcon"),L("frase"));
+	}
+	L("frase") = pnnext(L("frase"));
+}
+
+@@CODE

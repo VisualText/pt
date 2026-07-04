@@ -1,0 +1,77 @@
+###############################################
+# ARQUIVO: saida
+# ASSUNTO: Escreve um detalhamento legível dos sintagmas de cada frase
+#
+# Percorre a árvore final a partir da raiz e escreve, para cada frase, a sua
+# estrutura de sintagmas (nominais, verbais, preposicionais) até cada palavra
+# com a sua classe gramatical.  A saída vai para "sintagmas.txt" (no diretório
+# <arquivo>_log) e a versão JSON para "output.json".
+###############################################
+
+@DECL
+
+#---------------------------------------------------------------
+# Indentação: espacos() exige num >= 1 (NLP++ não tem cadeia vazia).
+#---------------------------------------------------------------
+espacos(L("num")) {
+	L("i") = 1;
+	L("s") = "  ";
+	while (L("i")++ < L("num")) {
+		L("s") = L("s") + "  ";
+	}
+	return L("s");
+}
+
+#---------------------------------------------------------------
+# Imprime recursivamente os filhos de um nó.  Sintagmas saem como grupos
+# entre colchetes; uma classe gramatical com a sua palavra colapsa numa
+# linha   palavra / classe.
+#---------------------------------------------------------------
+ImprimirArvore(L("out"),L("n"),L("nivel")) {
+	L("filho") = pndown(L("n"));
+	while (L("filho")) {
+		L("nome") = pnname(L("filho"));
+		if (EhClasse(L("filho"))) {
+			# classe gramatical: colapsa  palavra / classe (significado)
+			L("classe") = strpiece(L("nome"),1,strlength(L("nome")) - 1);
+			L("palavra") = pnname(pndown(L("filho")));
+			L("sig") = pnvar(L("filho"),"meaning");
+			L("out") << espacos(L("nivel")) << L("palavra")
+					<< " / " << L("classe");
+			if (L("sig"))
+				L("out") << " (" << conceptname(L("sig")) << ")";
+			L("out") << "\n";
+		} else if (strstartswith(L("nome"),"_")) {
+			# sintagma / oração: grupo entre colchetes
+			L("rotulo") = strpiece(L("nome"),1,strlength(L("nome")) - 1);
+			L("out") << espacos(L("nivel")) << L("rotulo") << " [\n";
+			ImprimirArvore(L("out"),L("filho"),L("nivel") + 1);
+			L("out") << espacos(L("nivel")) << "]\n";
+		}
+		# (pontuação e folhas soltas são ignoradas)
+		L("filho") = pnnext(L("filho"));
+	}
+}
+
+@@DECL
+
+@CODE
+
+G("sf") = "sintagmas.txt";
+G("nfrase") = 0;
+
+L("frase") = pndown(pnroot());
+while (L("frase")) {
+	if (pnname(L("frase")) == "_FRASE") {
+		G("nfrase") = G("nfrase") + 1;
+		G("sf") << "FRASE " << str(G("nfrase")) << "\n";
+		ImprimirArvore(G("sf"),L("frase"),1);
+		G("sf") << "\n";
+	}
+	L("frase") = pnnext(L("frase"));
+}
+
+JsonKB("output.json",G("frases"));
+SaveKB("dictionary.kbb",G("dictionary"),2);
+
+@@CODE

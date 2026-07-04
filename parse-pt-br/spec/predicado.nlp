@@ -1,0 +1,90 @@
+###############################################
+# ARQUIVO: predicado
+# ASSUNTO: Garante um verbo em cada oração (reparo do predicado)
+#
+# Uma oração finita precisa de verbo.  Quando a desambiguação deixa uma
+# oração sem verbo, o verbo real costuma ter virado substantivo.  Este passo
+# trata vírgula, subordinativas (_subordinada) e relativos (_pronrelativo)
+# como fronteiras de oração, e repara cada oração isoladamente:
+#
+#   * Imperativo: começa com substantivo capaz de ser verbo + objeto
+#     -> promove o primeiro a verbo.
+#   * Declarativa: um substantivo capaz de ser verbo logo após o núcleo do
+#     sujeito (só adjetivos/advérbios entre eles) é o verbo; paramos na
+#     primeira preposição/conjunção para não pegar substantivo interno ao
+#     sujeito.
+###############################################
+
+@DECL
+
+# Avalia a oração que acabou e a repara se não tiver verbo.
+RepararOracao(L("primeiro"),L("segundo"),L("temverbo"),L("cand")) {
+	# imperativo
+	if (L("primeiro") && pnname(L("primeiro")) == "_substantivo" && pnvar(L("primeiro"),"v")
+			&& L("segundo")
+			&& (pnname(L("segundo")) == "_determinante" || pnname(L("segundo")) == "_pronome")) {
+		pnrename(L("primeiro"),"_verbo");
+		return;
+	}
+	# declarativa: substantivo capaz de ser verbo logo após o núcleo do sujeito
+	if (!L("temverbo") && L("cand"))
+		pnrename(L("cand"),"_verbo");
+}
+
+@@DECL
+
+@CODE
+
+L("n") = pndown(pnroot());
+L("temverbo") = 0;
+L("viunucleo") = 0;
+L("bloqueado") = 0;
+L("cand") = 0;
+L("primeiro") = 0;
+L("segundo") = 0;
+L("idx") = 0;
+
+while (L("n")) {
+	L("nome") = pnname(L("n"));
+
+	if (L("nome") == "." || L("nome") == "?" || L("nome") == "!"
+			|| L("nome") == "," || L("nome") == "_subordinada"
+			|| L("nome") == "_pronrelativo") {
+		RepararOracao(L("primeiro"),L("segundo"),L("temverbo"),L("cand"));
+		L("temverbo") = 0;
+		L("viunucleo") = 0;
+		L("bloqueado") = 0;
+		L("cand") = 0;
+		L("primeiro") = 0;
+		L("segundo") = 0;
+		L("idx") = 0;
+	} else if (strlength(L("nome")) == 1) {
+		L("pular") = 1;		# pontuação solta: ignora
+	} else {
+		L("idx") = L("idx") + 1;
+		if (L("idx") == 1) L("primeiro") = L("n");
+		if (L("idx") == 2) L("segundo") = L("n");
+
+		if (L("nome") == "_verbo" || L("nome") == "_auxiliar") {
+			L("temverbo") = 1;
+		} else if (!L("bloqueado") && L("nome") == "_substantivo") {
+			if (!L("viunucleo"))
+				L("viunucleo") = 1;			# núcleo do sujeito
+			else if (!L("cand")) {
+				if (pnvar(L("n"),"v"))
+					L("cand") = L("n");		# substantivo capaz de ser verbo após o núcleo
+				else
+					L("bloqueado") = 1;
+			}
+		} else if (L("viunucleo") && !L("cand")
+				&& L("nome") != "_adjetivo" && L("nome") != "_adverbio") {
+			L("bloqueado") = 1;	# preposição/conj/det após o núcleo: interno ao sujeito, pare
+		}
+	}
+
+	L("n") = pnnext(L("n"));
+}
+
+RepararOracao(L("primeiro"),L("segundo"),L("temverbo"),L("cand"));
+
+@@CODE

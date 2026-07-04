@@ -1,0 +1,114 @@
+###############################################
+# ARQUIVO: significado
+# ASSUNTO: Aponta cada palavra para o significado escolhido (m01, m02, ...)
+#
+# O "dicttokz" deixa em cada nó-palavra a variável "meaning" apontando para o
+# conceito da PALAVRA no dicionário, cujos filhos são os significados
+# numerados (m01, m02, ...), cada um com o seu atributo "pos":
+#
+#   dictionary
+#     telhados
+#       m01: pos=adj ...
+#       m02: pos=s   ...
+#       m03: pos=v   ...
+#
+# Depois de toda a desambiguação a classe gramatical do nó já está fixada
+# (_substantivo, _adjetivo, _verbo, ...).  Aqui trocamos o ponteiro "meaning"
+# para o significado especifico cujo pos corresponde a classe escolhida,
+# casando a classe da arvore com o pos do dicionario.
+###############################################
+
+@DECL
+
+#---------------------------------------------------------------
+# ClasseParaPOS: o "pos" do dicionario correspondente a classe do no.
+#   Devolve 0 quando nao ha correspondencia simples (ver determinante,
+#   tratado a parte por ter varios "pos" possiveis).
+#---------------------------------------------------------------
+ClasseParaPOS(L("classe")) {
+	if (L("classe") == "_substantivo")	return "s";
+	if (L("classe") == "_verbo")		return "v";
+	if (L("classe") == "_auxiliar")		return "v";
+	if (L("classe") == "_adjetivo")		return "adj";
+	if (L("classe") == "_adverbio")		return "adv";
+	if (L("classe") == "_preposicao")	return "prep";
+	if (L("classe") == "_pronome")		return "pron";
+	if (L("classe") == "_pronrelativo")	return "pron";
+	if (L("classe") == "_conjuncao")	return "conj";
+	if (L("classe") == "_coordcl")		return "conj";
+	if (L("classe") == "_subordinada")	return "conj";
+	if (L("classe") == "_interjeicao")	return "int";
+	return 0;
+}
+
+#---------------------------------------------------------------
+# BuscarPorPOS: filho (m0X) de L("palavra") cujo "pos" é L("alvo"), ou 0.
+#---------------------------------------------------------------
+BuscarPorPOS(L("palavra"),L("alvo")) {
+	L("con") = down(L("palavra"));
+	while (L("con")) {
+		if (strval(L("con"),"pos") == L("alvo"))
+			return L("con");
+		L("con") = next(L("con"));
+	}
+	return 0;
+}
+
+#---------------------------------------------------------------
+# AjustarSignificado: troca o "meaning" do nó-classe (e da folha-palavra)
+#   pelo significado específico que casa com a classe gramatical.
+#---------------------------------------------------------------
+AjustarSignificado(L("no")) {
+	L("palavra") = pnvar(L("no"),"meaning");
+	if (!L("palavra"))
+		return;
+
+	L("classe") = pnname(L("no"));
+	L("con") = 0;
+
+	if (L("classe") == "_determinante") {
+		# determinante = artigo, demonstrativo/possessivo (pron), numeral ou
+		# substantivo usado como tal; tenta nessa ordem de preferência.
+		L("con") = BuscarPorPOS(L("palavra"),"art");
+		if (!L("con")) L("con") = BuscarPorPOS(L("palavra"),"pron");
+		if (!L("con")) L("con") = BuscarPorPOS(L("palavra"),"num");
+		if (!L("con")) L("con") = BuscarPorPOS(L("palavra"),"s");
+	} else {
+		L("alvo") = ClasseParaPOS(L("classe"));
+		if (L("alvo"))
+			L("con") = BuscarPorPOS(L("palavra"),L("alvo"));
+	}
+
+	if (L("con")) {
+		pnreplaceval(L("no"),"meaning",L("con"));
+		# copia os atributos próprios do significado escolhido (gen, num,
+		# raiz, pes, tem, ...) para o nó da árvore.
+		AmbigCopyAttrs(L("con"),L("no"));
+		L("folha") = pndown(L("no"));
+		if (L("folha"))
+			pnreplaceval(L("folha"),"meaning",L("con"));
+	}
+}
+
+#---------------------------------------------------------------
+# Percorre a árvore aplicando AjustarSignificado a cada nó de classe.
+#---------------------------------------------------------------
+PercorrerSignificados(L("no")) {
+	L("filho") = pndown(L("no"));
+	while (L("filho")) {
+		if (EhClasse(L("filho"))) {
+			AjustarSignificado(L("filho"));
+		} else if (strstartswith(pnname(L("filho")),"_")) {
+			PercorrerSignificados(L("filho"));
+		}
+		L("filho") = pnnext(L("filho"));
+	}
+}
+
+@@DECL
+
+@CODE
+
+PercorrerSignificados(pnroot());
+
+@@CODE

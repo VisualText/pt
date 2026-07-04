@@ -1,0 +1,130 @@
+###############################################
+# ARQUIVO: funcoes
+# ASSUNTO: Funções auxiliares de desambiguação e listas de palavras de
+#          classe fechada (determinantes, auxiliares, relativos, etc.).
+#
+# O dicionário "pt-full.dict" marca cada palavra com classes gramaticais:
+#   s   substantivo    v   verbo       adj  adjetivo    adv  advérbio
+#   prep preposição    pron pronome    art  artigo      conj conjunção
+#   int interjeição    "pos num" = quantas classes a palavra tem.
+#
+# Muitas palavras funcionais do português têm várias leituras (p.ex. "a" é
+# artigo, pronome, substantivo e preposição), por isso fixamos as classes
+# fechadas por LISTA de texto aqui, deixando só a ambiguidade de classe
+# aberta (substantivo / verbo / adjetivo) para o passo "desambiguar".
+#
+# Cada lista é guardada em pedaços com menos de 512 caracteres (limite de
+# cadeia do motor) e consultada pelas funções Eh...() abaixo.
+###############################################
+
+@DECL
+
+###############################################
+# EhPalavra: a palavra L("t") está na lista L("lista")?
+#   A lista é uma cadeia com espaços em volta de cada palavra:
+#   " de  a  em ... ".  Testamos se contém " t ".
+###############################################
+EhPalavra(L("t"),L("lista")) {
+	if (strcontains(" " + L("t") + " ",L("lista")))
+		return 1;
+	return 0;
+}
+
+###############################################
+# EhAuxiliar / EhDeterminante: consultam os pedaços das listas longas.
+###############################################
+EhAuxiliar(L("t")) {
+	if (EhPalavra(L("t"),G("aux1")) || EhPalavra(L("t"),G("aux2"))
+			|| EhPalavra(L("t"),G("aux3")))
+		return 1;
+	return 0;
+}
+
+EhDeterminante(L("t")) {
+	if (EhPalavra(L("t"),G("det1")) || EhPalavra(L("t"),G("det2")))
+		return 1;
+	return 0;
+}
+
+###############################################
+# EhNominal: o nó pode funcionar dentro de um sintagma nominal, ou seja,
+#   é substantivo, adjetivo, ou ainda ambíguo capaz de ser
+#   substantivo/adjetivo (mas não preposição)?
+###############################################
+EhNominal(L("n")) {
+	L("nm") = pnname(L("n"));
+	if (L("nm") == "_substantivo" || L("nm") == "_adjetivo")
+		return 1;
+	if (L("nm") == "_ambiguo"
+			&& (pnvar(L("n"),"s") || pnvar(L("n"),"adj"))
+			&& !pnvar(L("n"),"prep"))
+		return 1;
+	return 0;
+}
+
+###############################################
+# EhTipo: o rótulo do nó é L("tipo")?
+###############################################
+EhTipo(L("n"),L("tipo")) {
+	if (pnname(L("n")) == L("tipo"))
+		return 1;
+	return 0;
+}
+
+###############################################
+# EhClasse: o nó é uma classe gramatical (_substantivo, _verbo, ...), ou
+#   seja, um nó "_..." cujo único filho é a palavra literal (folha sem "_"
+#   e sem filhos próprios)?  Usado pelos passos de saída e de KB.
+###############################################
+EhClasse(L("no")) {
+	if (!strstartswith(pnname(L("no")),"_"))
+		return 0;
+	L("f") = pndown(L("no"));
+	if (!L("f"))
+		return 0;
+	if (pndown(L("f")))			# o filho é, ele mesmo, um nó interno
+		return 0;
+	if (strstartswith(pnname(L("f")),"_"))
+		return 0;
+	return 1;
+}
+
+@@DECL
+
+@CODE
+
+# --- determinantes: artigos, demonstrativos, possessivos ---
+G("det1") = " o a os as um uma uns umas este esta estes estas esse essa esses essas aquele aquela aqueles aquelas meu minha meus minhas teu tua teus tuas seu sua seus suas nosso nossa nossos nossas vosso vossa vossos vossas ";
+# --- determinantes: quantificadores e numerais ---
+G("det2") = " cada todo toda todos todas algum alguma alguns algumas nenhum nenhuma nenhuns nenhumas muito muita muitos muitas pouco pouca poucos poucas vário vária vários várias outro outra outros outras certo certa certos certas tanto tanta tantos tantas qualquer quaisquer ambos ambas dois duas três quatro cinco seis sete oito nove dez dezenas centenas ";
+
+# --- auxiliares / cópulas: ser e estar ---
+G("aux1") = " ser sou és é somos sois são era eras éramos éreis eram fui foste foi fomos fostes foram serei serás será seremos sereis serão seria serias seríamos seriam sendo sido seja sejam fosse fôssemos fossem estar estou estás está estamos estais estão estava estavas estávamos estavam estive esteve estivemos estiveram estará estarão estaria estariam estando estado esteja estejam estivesse estivessem ";
+# --- auxiliares: ter e haver ---
+G("aux2") = " ter tenho tens tem temos tendes têm tinha tinhas tínhamos tinham tive tiveste teve tivemos tiveram terei terás terá teremos terão teria teriam tendo tido tenha tenham tivesse tivessem haver hei hás há havemos hão havia havias havíamos haviam houve houveram haverá haverão havendo havido haja hajam houvesse houvessem ";
+# --- auxiliares: ir ---
+G("aux3") = " ir vou vais vai vamos ides vão ia ias íamos iam irei irás irá iremos irão iria iriam indo ido vá vão ";
+
+# --- pronomes relativos (e interrogativos) ---
+G("relativos") = " que quem qual quais cujo cuja cujos cujas onde quando quanto quanta quantos quantas ";
+
+# --- conjunções subordinativas confiáveis (sempre subordinam) ---
+G("subordinativas") = " porque embora enquanto conquanto porquanto contanto conforme consoante segundo posto salvo mediante malgrado pois ";
+
+# --- subordinativas que dependem de contexto (oração após elas) ---
+G("subordcond") = " quando como se que ";
+
+# --- conjunções coordenativas (podem unir orações) ---
+G("coordenativas") = " e mas ou nem porém contudo todavia entretanto logo portanto ";
+
+# --- coordenativas a fixar SEMPRE como conjunção no léxico: têm leitura
+#     nominal/pronominal espúria no dicionário ("e"=letra, "mas"=subst./pron.),
+#     mas no português moderno são conjunções.  ("logo" fica de fora por ser
+#     também advérbio: "venha logo".) ---
+G("coordfixas") = " e mas ou nem porém contudo todavia entretanto portanto ";
+
+# --- preposições (e contrações) que têm homógrafo verbal e por isso
+#     precisam ser fixadas por texto (p.ex. "pela/pelo" vs. verbo "pelar") ---
+G("preposicoes") = " pelo pela pelos pelas sobre entre sob contra após perante trás ante até desde para com sem por ";
+
+@@CODE

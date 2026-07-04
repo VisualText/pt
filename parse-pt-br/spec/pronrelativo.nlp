@@ -1,0 +1,22 @@
+###############################################
+# ARQUIVO: pronrelativo
+# ASSUNTO: Marca pronomes relativos para não serem absorvidos por um sintagma
+#
+# Um pronome relativo (que, quem, qual, cujo, onde, quando, quanto) segue o
+# nome que modifica ("o homem que ...", "a cidade onde ...").  Marcamos
+# "_pronrelativo" só quando um substantivo o precede, distinguindo do uso
+# interrogativo/conjuntivo no início de oração.
+###############################################
+
+@NODES _ROOT
+
+@CHECK
+	if (!EhPalavra(strtolower(N("$text",2)),G("relativos")))
+		fail();
+@POST
+	pnrename(N(2),"_pronrelativo");
+@RULES
+_xNIL <-
+	_xWILD [one match=(_substantivo _adjetivo _pronome)]	### (1) o antecedente
+	_xANY											### (2) o pronome relativo
+	@@

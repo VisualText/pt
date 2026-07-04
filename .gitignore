@@ -1,0 +1,17 @@
+# NLP++ generated run outputs
+*_log/
+vtrun_logfile.out
+*.log
+
+# Editor / analyzer machine state
+**/.vscode/state.json
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Backup files
+*.bak
+
+# Local Claude Code config
+.claude/

@@ -1,0 +1,62 @@
+###############################################
+# ARQUIVO: coordTag
+# ASSUNTO: Distingue "e/mas/ou" que coordena ORAÇÕES do que coordena sintagmas
+#
+# Uma conjunção coordena ORAÇÕES quando há um verbo dos DOIS lados dela, dentro
+# da mesma frase:
+#       [oração ... _SV ...] coord [... _SV ... oração]
+# É o caso mesmo quando o sujeito da segunda oração está oculto, como é comum
+# em português ("[eu queria ir], mas [estava cansado]").
+#
+# Quando não há verbo à direita, é coordenação de SINTAGMAS e a conjunção
+# permanece comum ("Comprei pães, queijos e frutas").
+#
+# Marcamos a conjunção coordenativa como coordenador de oração (_coordcl)
+# quando:
+#   * já apareceu um sintagma verbal (_SV) antes, na oração atual, E
+#   * há outro _SV depois dela, antes do fim da frase.
+###############################################
+
+@DECL
+
+###############################################
+# HaVerboAdiante: existe um _SV entre L("n") e o fim da frase atual?
+#   Pára nas fronteiras de frase (. ? !).  Serve para confirmar que a
+#   conjunção tem uma oração (com verbo) à direita.
+###############################################
+HaVerboAdiante(L("n")) {
+	while (L("n")) {
+		L("nm") = pnname(L("n"));
+		if (L("nm") == "." || L("nm") == "?" || L("nm") == "!")
+			return 0;
+		if (L("nm") == "_SV")
+			return 1;
+		L("n") = pnnext(L("n"));
+	}
+	return 0;
+}
+
+@@DECL
+
+@CODE
+
+L("n") = pndown(pnroot());
+L("viuSV") = 0;
+while (L("n")) {
+	L("nome") = pnname(L("n"));
+
+	if (L("nome") == "." || L("nome") == "?" || L("nome") == "!") {
+		L("viuSV") = 0;
+	} else if (L("nome") == "_SV") {
+		L("viuSV") = 1;
+	} else if (L("viuSV") && EhPalavra(strtolower(pnvar(L("n"),"$text")),G("coordenativas"))) {
+		if (HaVerboAdiante(pnnext(L("n")))) {
+			pnrename(L("n"),"_coordcl");
+			L("viuSV") = 0;		# o coordenador inicia uma nova oração
+		}
+	}
+
+	L("n") = pnnext(L("n"));
+}
+
+@@CODE

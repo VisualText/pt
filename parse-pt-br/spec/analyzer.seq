@@ -1,0 +1,24 @@
+dicttokz	nil	# Gen: tokeniza e marca as classes gramaticais do dicionário
+python	OOV	# python pass
+nlp	KBFuncs	# Biblioteca de funções da base de conhecimento
+nlp	iniciarKB	# Cria o conceito raiz "frases"
+nlp	funcoes	# Funções auxiliares e listas de palavras de classe fechada
+nlp	lexico	# Atribui a classe gramatical a cada palavra
+rec	desambiguar	# Desambigua palavras de classe aberta pelo contexto
+nlp	padroes	# Resolve ambiguidades restantes por preferência
+nlp	pronrelativo	# Marca pronomes relativos
+nlp	subordinada	# Marca conjunções subordinativas
+nlp	predicado	# Garante um verbo em cada oração
+nlp	sintagmaNominal	# Constrói sintagmas nominais (SN)
+nlp	sintagmaPreposicional	# Constrói sintagmas preposicionais (SP)
+nlp	sintagmaVerbal	# Constrói sintagmas verbais (SV)
+nlp	oracaoRelativa	# Agrupa orações relativas
+nlp	oracaoSubordinada	# Agrupa orações subordinadas
+nlp	coordTag	# Marca conjunções coordenativas de oração
+nlp	coordenacao	# Agrupa orações coordenadas
+nlp	frase	# Agrupa sintagmas em frases
+nlp	significado	# Aponta cada palavra para o significado (m01, m02, ...) escolhido
+nlp	construirKB	# Espelha a árvore na base de conhecimento
+nlp	mostrarKB	# Salva a base de conhecimento (.kbb)
+nlp	saida	# Escreve sintagmas.txt e output.json
+python	OOVMerge	# python pass
