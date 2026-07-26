@@ -1,0 +1,118 @@
+###############################################
+# ARQUIVO: contracoes
+# ASSUNTO: Contrações — preposição e determinante numa só palavra
+#
+# Em português a preposição funde-se com o determinante do sintagma nominal
+# seguinte:  no = em + o,  da = de + a,  pelos = por + os,
+#            naquele = em + aquele,  numa = em + uma.
+#
+# A decomposição está no dicionário (kb/user/pt-full.dict), e por isso o
+# tokenizador já a deixa marcada em cada token:
+#
+#   no [alpha, ("prep" 1) ("pron" 1) ("contracao" 1) ("contrprep" "em")
+#              ("contrdet" "o") ("gen" "m") ("num" "s")]
+#
+# Basta portanto reconhecer a marca "contracao" e fixar a palavra como
+# preposição ANTES do léxico.  Sem este passo o léxico lê "no" como pronome
+# (o Wiktionary dá-lhe também essa classe) e "do"/"da" como formas do verbo
+# "dar", e o sintagma preposicional perde-se.
+#
+# O nó fica _preposicao — é o que ele encabeça — mas leva consigo o
+# determinante fundido nos atributos, de modo que "no gol" dá
+# _SP [ _preposicao(no = em + o) _SN [ gol ] ] sem o determinante ter de
+# aparecer como palavra própria.
+#
+# Ambiguidade real: "no/na/nos/nas" são também pronomes oblíquos átonos
+# ("ele nos viu" ≠ "nos jardins").  Só as contrações que o dicionário também
+# dá como pronome precisam de decisão pelo contexto: a contração introduz um
+# sintagma nominal, o pronome átono encosta-se ao verbo.  Por isso, se a
+# palavra seguinte só puder ser verbo, é pronome.
+#
+# As duas leituras decidem-se AQUI, nas duas regras abaixo; não podemos
+# deixar o caso rejeitado cair no léxico, porque lá "nos" tem agora a marca
+# "prep" do dicionário e seria fixado como preposição de qualquer modo.
+###############################################
+
+@DECL
+
+###############################################
+# ConcordaComContracao: a palavra L("seg") tem alguma leitura nominal
+#   (substantivo, adjetivo, artigo, determinante, numeral) que concorde em
+#   gênero e número com o determinante fundido na contração?
+#
+#   O gênero e o número não são marcas do token — vivem nos significados do
+#   dicionário (kb/user/pt-full.kbb), que "meaning" aponta desde a
+#   tokenização.  Um significado sem gênero ou sem número não desmente nada,
+#   e uma palavra desconhecida também não.
+###############################################
+ConcordaComContracao(L("seg"),L("gen"),L("num")) {
+	L("palavra") = pnvar(L("seg"),"meaning");
+	if (!L("palavra"))
+		return 1;				# desconhecida: não bloqueia a contração
+	L("con") = down(L("palavra"));
+	while (L("con")) {
+		L("pos") = strval(L("con"),"pos");
+		if (L("pos") == "s" || L("pos") == "adj" || L("pos") == "art"
+				|| L("pos") == "pron" || L("pos") == "num") {
+			L("g") = strval(L("con"),"gen");
+			L("n") = strval(L("con"),"num");
+			if (L("g") == L("gen") && L("n") == L("num"))
+				return 1;
+		}
+		L("con") = next(L("con"));
+	}
+	return 0;
+}
+
+@@DECL
+
+@NODES _ROOT
+
+###############################################
+# 1. CONTRAÇÃO: a palavra traz a marca "contracao" do dicionário e, quando
+#    compete com um pronome átono, o contexto confirma o sintagma nominal.
+###############################################
+@CHECK
+	if (!N("contracao",1))
+		fail();
+
+	# ênclise: "disseram-nos", "viram-no" — o hífen liga o pronome ao verbo.
+	# Só os alomorfes de 3ª pessoa fazem isto, e todos têm leitura de pronome.
+	if (N("encl",1)) {
+		L("ant") = pnprev(N(1));
+		if (L("ant") && pnname(L("ant")) == "-")
+			fail();
+	}
+
+	# próclise: só "nos" (= a nós) aparece antes do verbo sem hífen.  Desempata
+	# a concordância: "nos jardins" (em + os, m/p) concorda; "nos ama" não,
+	# porque "ama" só é nome feminino singular — logo ali "nos" é pronome.
+	if (N("procl",1)) {
+		L("seg") = pnnext(N(1));
+		if (!L("seg"))
+			fail();				# nada a seguir: não introduz sintagma nominal
+		if (pnvar(L("seg"),"v")
+				&& !ConcordaComContracao(L("seg"),N("gen",1),N("num",1)))
+			fail();
+	}
+@POST
+	N("texto",1) = N("$text",1);
+	pnpush(N(1),"_preposicao");
+@RULES
+_xNIL <-
+	_xALPHA		### (1)
+	@@
+
+###############################################
+# 2. PRONOME OBLÍQUO ÁTONO: o que a regra 1 recusou ("ele nos viu").
+###############################################
+@CHECK
+	if (!N("contracao",1))
+		fail();
+@POST
+	N("texto",1) = N("$text",1);
+	pnpush(N(1),"_pronome");
+@RULES
+_xNIL <-
+	_xALPHA		### (1)
+	@@

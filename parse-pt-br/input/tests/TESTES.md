@@ -36,6 +36,7 @@ ao alterar os passos de desambiguação ou de construção de sintagmas.
 | 28 | `28_datas_tempo.txt` | Datas e expressões de tempo | "quinze de março", "às quatro horas" |
 | 29 | `29_dialogo.txt` | Diálogo / discurso direto | travessões, verbos dicendi |
 | 30 | `30_complexo.txt` | Texto complexo | mistura de todas as construções acima |
+| 31 | `31_contracoes_ambiguas.txt` | Contrações ambíguas | "nos jardins" (em+os) vs. "ele nos viu" (pronome); ênclise "-no/-na" |
 
 ## Como rodar todos os testes
 

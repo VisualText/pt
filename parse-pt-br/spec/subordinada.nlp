@@ -20,7 +20,7 @@
 _xNIL <-
 	_xWILD [one match=(_preposicao _conjuncao _pronome _pronrelativo _adverbio)]	### (1)
 	_xWILD [one match=(_pronome _determinante _substantivo)]					### (2) início do sujeito
-	_xWILD [star match=(_adjetivo _substantivo _adverbio _auxiliar _pronome _determinante)]	### (3) resto do sujeito
+	_xWILD [star match=(_adjetivo _substantivo _adverbio _auxiliar _pronome _determinante _preposicao)]	### (3) resto do sujeito (pode levar complemento preposicional: "o cheiro do pão quente")
 	_verbo													### (4) o verbo
 	@@
 

@@ -3,6 +3,7 @@ python	OOV	# python pass
 nlp	KBFuncs	# Biblioteca de funções da base de conhecimento
 nlp	iniciarKB	# Cria o conceito raiz "frases"
 nlp	funcoes	# Funções auxiliares e listas de palavras de classe fechada
+nlp	contracoes	# Fixa as contrações (no = em + o) como preposição
 nlp	lexico	# Atribui a classe gramatical a cada palavra
 rec	desambiguar	# Desambigua palavras de classe aberta pelo contexto
 nlp	padroes	# Resolve ambiguidades restantes por preferência
